@@ -1,0 +1,36 @@
+#!/usr/bin/env python3
+
+import json 
+import argparse
+from datetime import datetime, timedelta
+
+
+
+with open('schedule.json', 'r') as f:
+    schedule = json.load(f)
+with open('overrides.json', 'r') as f:
+    overrides = json.load(f)
+
+
+
+
+def general_schedule():
+
+    users = schedule['users']
+    handover_start_at = datetime.fromisoformat(schedule['handover_start_at'].replace('Z', '+00:00'))
+    handover_interval_days = schedule['handover_interval_days']
+
+    
+def override_schedule():
+    
+    override_user = overrides['user']
+    override_start_at = datetime.fromisoformat(overrides['start_at'].replace('Z', '+00:00'))
+    override_end_at = datetime.fromisoformat(overrides['end_at'].replace('Z', '+00:00'))
+
+
+def trucate_schedule():
+    print()
+
+
+print(json.dumps(schedule, indent=2))
+
