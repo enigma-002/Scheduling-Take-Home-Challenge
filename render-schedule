@@ -13,8 +13,6 @@ overrides = None
 from_time = None
 until_time = None
 
-
-
 #parser =  argparse.ArgumentParser()
 #parser.add_argument('--schedule',  required=True, help='Path to the schedule JSON file')
 #parser.add_argument('--overrides', required=True, help='Path to the overrides JSON file')
@@ -86,37 +84,6 @@ def override_schedule(base_schedule):
         base_schedule.append(override_entry) 
     return base_schedule
 
-def sort_schedule():
-    init()
-
-    final_schedule = []
-    override_added = False
-    
-    for entry in base_schedule:
-        if entry.start_at< override_end_at and entry.end_at > override_start_at:
-
-            if entry.start_at < override_start_at:
-                truncated_entry = ScheduleEntry(entry.user, entry.start_at, override_start_at)
-                final_schedule.append(truncated_entry)
-            
-            if not override_added:
-                override_entry = ScheduleEntry(override_user, override_start_at, override_end_at)
-                final_schedule.append(override_entry)
-                override_added = True
-
-            if entry.end_at > override_end_at:
-                truncated_entry = ScheduleEntry(entry.user, override_end_at, entry.end_at)
-                final_schedule.append(truncated_entry)
-        else:
-            final_schedule.append(entry)
-
-    
-    for entry in final_schedule:
-        if entry is override_entry:
-            print(Fore.BLUE+ str(entry.dict()) + Style.RESET_ALL)
-        else:
-            print(entry.dict())
-
 def trucate(base_schedule, from_time, until_time):
     truncated_schedule = []
     for entry in base_schedule:
@@ -129,9 +96,10 @@ def trucate(base_schedule, from_time, until_time):
     print()
 
 base_schedule = general_schedule()
-final_schedule = override_schedule(base_schedule)
+full_schedule = override_schedule(base_schedule)
+full_schedule.sort(key=lambda entry: entry.start_at)
 
-for entry in final_schedule:
+for entry in full_schedule:
     if entry.override == True:
         print(Fore.BLUE+ str(entry.dict()) + Style.RESET_ALL)
     else:
