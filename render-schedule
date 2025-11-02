@@ -4,23 +4,39 @@
 
 import json 
 import argparse
-
 from colorama import Fore, Style, init
 from datetime import datetime, timedelta
 
 
+schedule = None
+overrides = None
+from_time = None
+until_time = None
+
+
+
+#parser =  argparse.ArgumentParser()
+#parser.add_argument('--schedule',  required=True, help='Path to the schedule JSON file')
+#parser.add_argument('--overrides', required=True, help='Path to the overrides JSON file')
+#parser.add_argument('--from', dest= 'from_time', required=True, help='Start time (ISO format)')
+#parser.add_argument('--until', dest= 'until_time', required=True, help='End time (ISO format)')
+#args = parser.parse_args()
 
 with open('schedule.json', 'r') as f:
     schedule = json.load(f)
 with open('overrides.json', 'r') as f:
     overrides = json.load(f)
 
+#from_time = datetime.fromisoformat(parser.parse_args().from_time.replace('Z', '+00:00'))
+#until_time = datetime.fromisoformat(parser.parse_args().until_time.replace('Z', '+00:00'))
+
 
 class ScheduleEntry:
-    def __init__(self, user, start_at, end_at):
+    def __init__(self, user, start_at, end_at,override=False):
         self.user = user
         self.start_at = start_at
         self.end_at = end_at
+        self.override = override
 
     def __str__(self):
         return f"{self.user}, Start: {self.start_at.strftime('%b %d %H:%M')}, End: {self.end_at.strftime('%b %d %H:%M')}"
@@ -43,7 +59,6 @@ class ScheduleEntry:
             'end_at': self.end_at.strftime('%d %B %H:%M')
         }
 
-
 def general_schedule():
 
     users = schedule['users']
@@ -51,24 +66,27 @@ def general_schedule():
     handover_interval_days = schedule['handover_interval_days']
     base_schedule = []
 
+
     for i in range(len(users)): 
         user = users[i % len(users)]
         start_at = handover_start_at + timedelta(days=i * handover_interval_days)
         end_at = start_at + timedelta(days=handover_interval_days)
-        entry = ScheduleEntry(user, start_at, end_at)
+        entry = ScheduleEntry(user, start_at, end_at, override=False)
         base_schedule.append(entry)
 
     return base_schedule
-    
-
 
 def override_schedule(base_schedule):
     
-    override_user = overrides['user']
-    override_start_at = datetime.fromisoformat(overrides['start_at'].replace('Z', '+00:00'))
-    override_end_at = datetime.fromisoformat(overrides['end_at'].replace('Z', '+00:00'))
-    
+    for o in overrides:
+        override_user = o['user']
+        override_start_at = datetime.fromisoformat(o['start_at'].replace('Z', '+00:00'))
+        override_end_at = datetime.fromisoformat(o['end_at'].replace('Z', '+00:00'))
+        override_entry = ScheduleEntry(override_user, override_start_at, override_end_at, override=True)
+        base_schedule.append(override_entry) 
+    return base_schedule
 
+def sort_schedule():
     init()
 
     final_schedule = []
@@ -95,14 +113,26 @@ def override_schedule(base_schedule):
     
     for entry in final_schedule:
         if entry is override_entry:
-            print(Fore.BLUE+ str(entry) + Style.RESET_ALL)
+            print(Fore.BLUE+ str(entry.dict()) + Style.RESET_ALL)
         else:
-            print(str(entry))
+            print(entry.dict())
 
-def trucate_schedule():
+def trucate(base_schedule, from_time, until_time):
+    truncated_schedule = []
+    for entry in base_schedule:
+        
+
+        start_at = max(entry.start_at, from_time)
+        end_at = min(entry.end_at, until_time)
+        truncated_entry = ScheduleEntry(entry.user, start_at, end_at, entry.override)
+        truncated_schedule.append(truncated_entry)
     print()
 
-base_schedule =[]
 base_schedule = general_schedule()
-override_schedule(base_schedule)
+final_schedule = override_schedule(base_schedule)
 
+for entry in final_schedule:
+    if entry.override == True:
+        print(Fore.BLUE+ str(entry.dict()) + Style.RESET_ALL)
+    else:
+        print(entry.dict())
