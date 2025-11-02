@@ -3,8 +3,7 @@
   "users": [
     "Alice",
     "Bob",
-    "Charlie",
-    "David"
+    "Charlie"
   ],
 
   "handover_start_at": "2025-11-07T17:00:00Z",
