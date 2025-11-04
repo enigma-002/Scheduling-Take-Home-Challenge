@@ -70,6 +70,7 @@ def override_schedule(schedule,overrides):
     return schedule
 
 def overlap_fix(schedule):
+
     """Fixes overlapping schedule times by trimming a replacing times and then adds new entries as needed."""
 
     schedule.sort(key=lambda entry: entry.start_at) 
@@ -82,12 +83,12 @@ def overlap_fix(schedule):
             continue
             
         current_entry = fixed_schedule[-1]
+        previous_end = current_entry.end_at
 
         if entry.start_at >= current_entry.end_at: 
             fixed_schedule.append(entry)
 
         if entry.end_at <= current_entry.end_at: 
-            previous_end = current_entry.end_at
             current_entry.end_at = entry.start_at 
             fixed_schedule.append(entry)
 
@@ -96,34 +97,16 @@ def overlap_fix(schedule):
 
     return fixed_schedule
 
-
 def truncate(schedule, start_time, end_time):
     """Truncates schedule to fit within specified time range."""
-    for i, entry in enumerate(schedule):
+    
+    first_entry = schedule[0]
+    last_entry = schedule[-1]
 
-        start = entry.start_at
-        end = entry.end_at
-
-        if i == len(schedule)-1 and end > end_time:
-            entry.set_end(end_time)
-
-        if i== 0 and start < start_time:
-            entry.set_start(start_time)
-
-        if start < start_time and end > start_time:
-            entry.set_start(start_time)
-        if start < end_time and end > end_time:
-            entry.set_end(end_time)
-
-        if i+1 < len(schedule):
-            next_entry = schedule[i+1]
-            if end > next_entry.start_at:
-                entry.set_end(next_entry.start_at)
-                
-        if i> 0:
-            prev_entry = schedule[i-1]
-            if entry.start_at > prev_entry.end_at:
-                entry.set_start(prev_entry.end_at)
+    last_entry.set_end(end_time)
+    if first_entry.start_at < start_time:
+        first_entry.set_start(start_time)
+    
     return schedule
 
 def main():
@@ -138,10 +121,8 @@ def main():
     start_time = datetime.fromisoformat(args.from_time.replace('Z', '+00:00'))
     end_time = datetime.fromisoformat(args.until_time.replace('Z', '+00:00'))
 
-    while end_time <= start_time:
+    if end_time <= start_time:
         raise ValueError("End time must be after start time, please re-enter a correct time range.")
-
-
 
     base_schedule = general_schedule(schedule)
     full_schedule = override_schedule(base_schedule,overrides)
