@@ -18,7 +18,7 @@ def parse_arguments():
 
 class ScheduleEntry:
     
-    """lass to represent a single schedule entry."""
+    """class to represent a single schedule entry."""
     def __init__(self, user, start_at, end_at,override=False):
         self.user = user
         self.start_at = start_at
@@ -72,7 +72,7 @@ def override_schedule(schedule,overrides):
 def overlap_fix(schedule):
     """Fixes overlapping schedule times by trimming a replacing times and then adds new entries as needed."""
 
-    schedule.sort(key=lambda entry: entry.start_at) #sorts by start time
+    schedule.sort(key=lambda entry: entry.start_at) 
 
     fixed_schedule = []
 
@@ -86,12 +86,12 @@ def overlap_fix(schedule):
         if entry.start_at >= current_entry.end_at: 
             fixed_schedule.append(entry)
 
-        if entry.end_at <= current_entry.end_at: #case where the current entry does not finish before the new one starts
-            previous_end = current_entry.end_at #save time to ensure that everyone does the interval amount of dasys
-            current_entry.end_at = entry.start_at #fix end time 
+        if entry.end_at <= current_entry.end_at: 
+            previous_end = current_entry.end_at
+            current_entry.end_at = entry.start_at 
             fixed_schedule.append(entry)
 
-        if entry.end_at < previous_end: #add new entry for remaining time so everyone does their interval
+        if entry.end_at < previous_end: 
             fixed_schedule.append(ScheduleEntry(current_entry.user, entry.end_at, previous_end, override=current_entry.override))
 
     return fixed_schedule
@@ -137,6 +137,11 @@ def main():
 
     start_time = datetime.fromisoformat(args.from_time.replace('Z', '+00:00'))
     end_time = datetime.fromisoformat(args.until_time.replace('Z', '+00:00'))
+
+    while end_time <= start_time:
+        raise ValueError("End time must be after start time, please re-enter a correct time range.")
+
+
 
     base_schedule = general_schedule(schedule)
     full_schedule = override_schedule(base_schedule,overrides)
