@@ -70,42 +70,32 @@ def override_schedule(schedule,overrides):
     return schedule
 
 def overlap_fix(schedule):
-    """Fixes overlapping schedule times"""
-    schedule.sort(key=lambda entry: entry.start_at)
+    """Fixes overlapping schedule times by trimming a replacing times and then adds new entries as needed."""
+
+    schedule.sort(key=lambda entry: entry.start_at) #sorts by start time
+
     fixed_schedule = []
-    skip_next = False
 
-    for i, entry in enumerate(schedule):
-
-        if skip_next:
-            skip_next = False
+    for entry in schedule:
+        if not fixed_schedule:
+            fixed_schedule.append(entry)
             continue
-
-        current_entry = schedule[i]
-
-        if i+1 < len(schedule):
             
-            next_entry = schedule[i+1]
+        current_entry = fixed_schedule[-1]
 
-            if current_entry.end_at > next_entry.start_at:
+        if entry.start_at >= current_entry.end_at: 
+            fixed_schedule.append(entry)
 
-                fixed_schedule.append(current_entry)
-                fixed_schedule.append(next_entry)
-                new_entry = ScheduleEntry(
-                    user=entry.user,
-                    start_at=next_entry.end_at,
-                    end_at=current_entry.end_at,
-                    override=False
-                )
-                fixed_schedule.append(new_entry)
-                skip_next = True
-            
-            else:
-                fixed_schedule.append(current_entry)
-        else:
-            fixed_schedule.append(current_entry)
+        if entry.end_at <= current_entry.end_at: #case where the current entry does not finish before the new one starts
+            previous_end = current_entry.end_at #save time to ensure that everyone does the interval amount of dasys
+            current_entry.end_at = entry.start_at #fix end time 
+            fixed_schedule.append(entry)
+
+        if entry.end_at < previous_end: #add new entry for remaining time so everyone does their interval
+            fixed_schedule.append(ScheduleEntry(current_entry.user, entry.end_at, previous_end, override=current_entry.override))
 
     return fixed_schedule
+
 
 def truncate(schedule, start_time, end_time):
     """Truncates schedule to fit within specified time range."""
